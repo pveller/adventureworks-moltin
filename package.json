@@ -1,0 +1,19 @@
+{
+  "name": "adventureworks-moltin",
+  "version": "1.0.0",
+  "description": "Scripts to create a sample Moltin store using the Adventure Works dataset",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Pavel Veller",
+  "license": "MIT",
+  "dependencies": {
+    "csv": "^1.1.0",
+    "gm": "^1.23.0",
+    "lodash": "^4.17.2",
+    "moltin": "^1.0.4",
+    "request": "^2.79.0",
+    "rx-node": "^1.0.2"
+  }
+}
