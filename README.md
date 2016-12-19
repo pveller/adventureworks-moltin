@@ -6,7 +6,7 @@ A set of scripts to setup the [Adventure Works](https://msftdbprodsamples.codepl
 
 I was building a conversational eCommerce chatbot for [my talk at API Strat](http://boston2016.apistrat.com/speakers/pavel-veller) and I needed a robust but easy to use API-first commerce platform with a decent free plan. This is how I discovered [Moltin](https://moltin.com/).
 
-The next thing I needed was a sample store that would have categories and products with images and variants (like `color` and `size`). I also needed historical orders to build a recommendation model with [Cognitive Services Recommendations API](https://www.microsoft.com/cognitive-services/en-us/recommendations-api). That's how I discovered [Adventure Works](https://msftdbprodsamples.codeplex.com/releases/view/125550).
+The next thing I needed was a sample store that would have categories and products with images and variants (like `color` and `size`). I also needed historical orders to build a recommendation model with [Cognitive Services Recommendations API](https://www.microsoft.com/cognitive-services/en-us/recommendations-api). This is how I discovered [Adventure Works](https://msftdbprodsamples.codeplex.com/releases/view/125550).
 
 ## Usage
 
@@ -18,7 +18,7 @@ To create your Adventure Works catalog in Moltin you'll need [node.js](https://n
 
 ```
 export MOLTIN_PUBLIC_ID="<Client ID>"
-export MOLTIN_SECRET_KEY="<Clienet Secret>"
+export MOLTIN_SECRET_KEY="<Client Secret>"
 ```
 
 * Download Adventure Works OLTP Script from [here](https://msftdbprodsamples.codeplex.com/downloads/get/880662) and unzip (for example to `~/Downloads/Adventure Works 2014 OLTP Script`)
@@ -38,7 +38,7 @@ npm install
 * Run `app.js` and supply the path to your Adventure Works files as a command line argument
 
 ```
-node app.js "~/Downloads/Adventure Works 2014 OLTP Script"
+node app.js "/Users/<yourself>/Downloads/Adventure Works 2014 OLTP Script"
 ```
 
 It will run for about ten minutes and you should see something like this in your console:
@@ -91,6 +91,7 @@ Changing SKU on the variation Cycling Cap Multi from P*CA-1098_MULTI to CA-1098
 [...]
 Deleting a variation [ML Mountain Frame-W 42 Black] that does not exist in the data
 [...]
+Products import complete
 New moltin catalog is ready to go
 ```
 
