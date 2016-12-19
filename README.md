@@ -80,8 +80,8 @@ Adding a variation [color - Yellow] for LL Touring Frame
 Adding a variation [color - Black] for Half-Finger Gloves
 Adding a variation [color - Multi] for Cycling Cap
 Adding a variation [color - Silver] for HL Mountain Frame
-[...
-]Adding a variation [color - Black] for Full-Finger Gloves
+[...]
+Adding a variation [color - Black] for Full-Finger Gloves
 Adding a variation [color - Black] for LL Road Frame
 Adding a variation [color - Blue] for LL Touring Frame
 Adding a variation [size - S] for Half-Finger Gloves
