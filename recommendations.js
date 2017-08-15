@@ -35,7 +35,7 @@ if (!path || !fs.existsSync(path)) {
 }
 
 const no_comma = (str) => str.replace(/,/g,' ').replace(/\s+/g, ' ');
-const format_date = (date) => date.replace(/-/g, '/').replace(' ', 'T');
+const format_date = (date) => date.replace(' ', 'T');
 
 const advw = require('./adventure-works-data')({ path });
 advw.then(data => {
