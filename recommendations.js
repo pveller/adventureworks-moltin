@@ -31,61 +31,74 @@ const fs = require('fs');
 
 const path = process.argv[2];
 if (!path || !fs.existsSync(path)) {
-    throw 'Please specify a valid file system path to the Adventure Works catalog files as a command line argument'
+  throw 'Please specify a valid file system path to the Adventure Works catalog files as a command line argument';
 }
 
-const no_comma = (str) => str.replace(/,/g,' ').replace(/\s+/g, ' ');
-const format_date = (date) => date.replace(' ', 'T');
+const no_comma = str => str.replace(/,/g, ' ').replace(/\s+/g, ' ');
+const format_date = date => date.replace(' ', 'T');
 
 const advw = require('./adventure-works-data')({ path });
-advw.then(data => {
+advw
+  .then(data => {
     return new Promise((resolve, reject) => {
-        console.log('Generating the catalog file...');
+      console.log('Generating the catalog file...');
 
-        fs.writeFile(`${path}/recommendations-catalog.csv`,
-            data.inventory.reduce((str, row) => {
-                //id, name, category, description
-                return row.variants.reduce((str, line) => {
-                    return str + `${line.sku},`
-                               + `${no_comma(line.name)},`
-                               + `${no_comma(line.category.name)},`
-                               + `${no_comma(row.description)}\r\n`;
-                }, str)
-            }, ''),
-            function (err) {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(data);
-                }
-            });
+      fs.writeFile(
+        `${path}/recommendations-catalog.csv`,
+        data.inventory.reduce((str, row) => {
+          //id, name, category, description
+          return row.variants.reduce((str, line) => {
+            return (
+              str +
+              `${line.sku},` +
+              `${no_comma(line.name)},` +
+              `${no_comma(line.category.name)},` +
+              `${no_comma(row.description)}\r\n`
+            );
+          }, str);
+        }, ''),
+        function(err) {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(data);
+          }
+        }
+      );
     });
-}).then(data => {
+  })
+  .then(data => {
     return new Promise((resolve, reject) => {
-        console.log('Generating the usage file...');
+      console.log('Generating the usage file...');
 
-        fs.writeFile(`${path}/recommendations-usage.csv`,
-            data.transactions.reduce((str, row) => {
-                return row.details.reduce((str, line) => {
-                    return str + `${row.customer},`
-                               + `${line.sku},`
-                               + `${format_date(row.orderDate)},`
-                               + 'Purchase\r\n';
-                }, str);
-            }, ''),
-            function (err) {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(data);
-                }
-            });
+      fs.writeFile(
+        `${path}/recommendations-usage.csv`,
+        data.transactions.reduce((str, row) => {
+          return row.details.reduce((str, line) => {
+            return (
+              str +
+              `${row.customer},` +
+              `${line.sku},` +
+              `${format_date(row.orderDate)},` +
+              'Purchase\r\n'
+            );
+          }, str);
+        }, ''),
+        function(err) {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(data);
+          }
+        }
+      );
     });
-}).then((data) => {
+  })
+  .then(data => {
     console.log('All said and done');
-
-}).catch(error => {
+  })
+  .catch(error => {
     console.error(error);
 
     throw error;
-});
+  });

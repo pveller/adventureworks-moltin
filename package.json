@@ -4,17 +4,32 @@
   "description": "Scripts to create a sample Moltin store using the Adventure Works dataset",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "precommit": "npm run lint",
+    "lint": "node node_modules/eslint/bin/eslint ./ --fix -f table || true"
   },
   "author": "Pavel Veller",
   "license": "MIT",
   "dependencies": {
+    "@moltin/sdk": "^3.2.0",
     "co": "^4.6.0",
-    "csv": "^1.1.0",
-    "gm": "^1.23.0",
-    "lodash": "^4.17.2",
-    "moltin": "^1.0.4",
-    "request": "^2.79.0",
+    "csv": "^2.0.0",
+    "gm": "^1.23.1",
+    "lodash": "^4.17.4",
+    "request": "^2.83.0",
     "rx-node": "^1.0.2"
+  },
+  "devDependencies": {
+    "babel-eslint": "^8.2.1",
+    "eslint": "^4.15.0",
+    "eslint-config-prettier": "^2.9.0",
+    "eslint-config-standard": "^11.0.0-beta.0",
+    "eslint-plugin-import": "^2.8.0",
+    "eslint-plugin-node": "^5.2.1",
+    "eslint-plugin-prettier": "^2.4.0",
+    "eslint-plugin-promise": "^3.6.0",
+    "eslint-plugin-standard": "^3.0.1",
+    "husky": "^0.14.3",
+    "lint-staged": "^6.0.0",
+    "prettier": "^1.10.2"
   }
 }

@@ -3,19 +3,22 @@
 const fs = require('fs');
 
 module.exports = function(file, opts, patches) {
-    return new Promise((resolve, reject) => {
-        fs.readFile(`${file}`, opts, (err, content) => {
-            if (err) { throw err; }
+  return new Promise((resolve, reject) => {
+    fs.readFile(`${file}`, opts, (err, content) => {
+      if (err) {
+        throw err;
+      }
 
-            const modified = patches.reduce((text, patch) => {
-                return text.replace(patch, '');
-            }, content);
+      const modified = patches.reduce((text, patch) => {
+        return text.replace(patch, '');
+      }, content);
 
-            fs.writeFile(`${file}`.replace(/csv$/, '2.csv'), modified, opts, (err) => {
-                if (err) { throw err; }
-                resolve();
-            });
-        });
-
+      fs.writeFile(`${file}`.replace(/csv$/, '2.csv'), modified, opts, err => {
+        if (err) {
+          throw err;
+        }
+        resolve();
+      });
     });
-}
+  });
+};

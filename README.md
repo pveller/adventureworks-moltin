@@ -1,3 +1,6 @@
+# UPDATE
+Upgraded to work over Moltin v2 APIs and is now using the latest [js-sdk](https://github.com/moltin/js-sdk)
+
 # Adventure Works catalog for Moltin
 
 A set of scripts to setup the [Adventure Works](https://msftdbprodsamples.codeplex.com/releases/view/125550) product catalog in your [Moltin](https://moltin.com/) store.
@@ -17,8 +20,8 @@ To create your Adventure Works catalog in Moltin you'll need [node.js](https://n
 * Set up two environment variables
 
 ```
-export MOLTIN_PUBLIC_ID="<Client ID>"
-export MOLTIN_SECRET_KEY="<Client Secret>"
+export MOLTIN_CLIENT_ID="<Client ID>"
+export MOLTIN_CLIENT_SECRET="<Client Secret>"
 ```
 
 * Download Adventure Works OLTP Script from [here](https://msftdbprodsamples.codeplex.com/downloads/get/880662) and unzip (for example to `~/Downloads/Adventure Works 2014 OLTP Script`)
