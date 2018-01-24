@@ -25,8 +25,6 @@ Moltin.Categories.CreateRelationships = function(id, type, resources) {
 
 Moltin.Categories.RemoveAll = Moltin.Products.RemoveAll = function() {
   const clean = () => {
-    this.Limit(10);
-
     return this.All().then(({ data, meta }) => {
       const total = meta.results.all;
       const current = meta.results.total;
@@ -36,14 +34,16 @@ Moltin.Categories.RemoveAll = Moltin.Products.RemoveAll = function() {
 
       console.log('Processing the first %s of %s total', current, total);
 
-      const deleted = Promise.all(
-        data.map(p => {
-          console.log('Requesting a delete of %s - %s', p.name, p.id);
+      const deleted = data.reduce(
+        (chain, p) =>
+          chain.then(() => {
+            console.log('Requesting a delete of %s - %s', p.name, p.id);
 
-          return this.Delete(p.id).catch(error => {
-            console.error(error);
-          });
-        })
+            return this.Delete(p.id).catch(error => {
+              console.error(error);
+            });
+          }),
+        Promise.resolve()
       );
 
       return total <= current ? deleted : deleted.then(() => clean());
