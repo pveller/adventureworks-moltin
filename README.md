@@ -32,6 +32,15 @@ export MOLTIN_CLIENT_SECRET="<Client Secret>"
 git clone git@github.com:pveller/adventureworks-moltin.git
 ```
 
+* Install [ImageMagick](http://www.imagemagick.org/) and [GraphicsMagic](http://www.graphicsmagick.org/). I am using [gm](https://www.npmjs.com/package/gm) to pre-process images and it needs these two. On Mac, it is as simple as:
+
+```
+brew install imagemagick
+brew install graphicsmagick
+```
+
+Note: you may be asked to update `Command Line Utilities` which basically means installing the latest version of XCode for your macOS.
+
 * Install packages
 
 ```
@@ -42,6 +51,12 @@ npm install
 
 ```
 node app.js "/Users/<yourself>/Downloads/Adventure Works 2014 OLTP Script"
+```
+
+If you haven't set up your Moltin credentials as global environment variables, you can run `app.js` like this:
+
+```
+$ MOLTIN_CLIENT_ID="<Client ID>" MOLTIN_CLIENT_SECRET="<Client Secret>" node app.js "<path to catalog>"
 ```
 
 It will run for about ten minutes and you should see something like this in your console:

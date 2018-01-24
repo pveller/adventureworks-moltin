@@ -1,12 +1,8 @@
 'use strict';
 
 const _ = require('lodash');
-const MoltinGateway = require('@moltin/sdk').gateway;
-const Moltin = MoltinGateway({
-  client_id: process.env.MOLTIN_CLIENT_ID,
-  client_secret: process.env.MOLTIN_CLIENT_SECRET
-});
 const advw = require('./adventure-works-data');
+const Moltin = require('./moltin');
 
 // ToDo: 1. convert to a module that exposes one function accepting path and tax band as an argument (or maybe we just query the tax band?)
 
