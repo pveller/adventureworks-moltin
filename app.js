@@ -7,6 +7,8 @@ const images = require('./images');
 const preprocess = require('./preprocess');
 const Moltin = require('./moltin');
 
+process.on('unhandledRejection', reason => console.error(reason));
+
 const catalog = process.argv[2];
 if (!catalog || !fs.existsSync(catalog)) {
   throw 'Please specify a valid file system path to the Adventure Works catalog files as a command line argument';

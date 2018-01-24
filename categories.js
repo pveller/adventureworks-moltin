@@ -56,33 +56,48 @@ module.exports = function(path) {
           slug: subcategory.name.toLowerCase(),
           status: 'live',
           description: subcategory.name
+        }).then(({ data }) => {
+          console.log(`Successfully created ${data.name} category`);
+
+          subcategory.moltin = data;
+          return subcategory;
         })
-          .then(({ data }) => {
-            console.log(`Successfully created ${data.name} category`);
-            return data;
-          })
-          .then(result => {
-            return Moltin.Categories.CreateRelationships(
-              result.id,
-              'categories',
-              [
-                {
+      )
+    )
+    .reduce((acc, subcategory) => {
+      const parent = subcategory.parent.moltin.id;
+
+      acc[parent] = acc[parent] || [];
+      acc[parent].push(subcategory.moltin.id);
+
+      return acc;
+    }, {})
+    .concatMap(subcategories =>
+      Rx.Observable.defer(() =>
+        Object.keys(subcategories).reduce(
+          (chain, parent) =>
+            chain.then(() =>
+              Moltin.Categories.CreateRelationships(
+                parent,
+                'children',
+                subcategories[parent].map(child => ({
                   type: 'category',
-                  id: subcategory.parent.moltin.id
-                }
-              ]
-            );
-          })
-          .then(result => {
-            console.log(
-              'Registered %s -> %s relationship',
-              subcategory.parent.moltin.name,
-              subcategory.name
-            );
-          })
-          .catch(error => {
-            console.error(error);
-          })
+                  id: child
+                }))
+              )
+                .then(result => {
+                  console.log(
+                    'Created %s children relationships for %s',
+                    subcategories[parent].length,
+                    parent
+                  );
+                })
+                .catch(error => {
+                  console.error(error);
+                })
+            ),
+          Promise.resolve()
+        )
       )
     );
 };
