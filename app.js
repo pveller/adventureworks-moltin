@@ -46,6 +46,11 @@ new Promise((resolve, reject) => {
   })
   .then(() => {
     // Step 4. Erase the catalog if running with the --clean option
+    console.log('Removing all variations');
+    return clean ? Moltin.Variations.RemoveAll() : Promise.resolve();
+  })
+  .then(() => {
+    // Step 4. Erase the catalog if running with the --clean option
     console.log('Removing all products');
     return clean ? Moltin.Products.RemoveAll() : Promise.resolve();
   })

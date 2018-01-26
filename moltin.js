@@ -15,7 +15,12 @@ so we will expect resources to be of the following shape:
 
 We also expect the type to be already pluralized (e.g. categories vs. category)
 */
-Moltin.Categories.CreateRelationships = function(id, type, resources) {
+
+Moltin.Categories.CreateRelationships = Moltin.Products.CreateRelationshipsRaw = function(
+  id,
+  type,
+  resources
+) {
   return this.request.send(
     `${this.endpoint}/${id}/relationships/${type}`,
     'POST',
@@ -26,8 +31,8 @@ Moltin.Categories.CreateRelationships = function(id, type, resources) {
 Moltin.Categories.RemoveAll = Moltin.Products.RemoveAll = function() {
   const clean = () => {
     return this.All().then(({ data, meta }) => {
-      const total = meta.results.all;
-      const current = meta.results.total;
+      const total = meta && meta.results ? meta.results.all : data.length;
+      const current = meta && meta.results ? meta.results.total : data.length;
 
       // meta.page.current
       // meta.page.total
@@ -51,6 +56,18 @@ Moltin.Categories.RemoveAll = Moltin.Products.RemoveAll = function() {
   };
 
   return clean();
+};
+
+Moltin.Variations = Object.setPrototypeOf(
+  Object.assign({}, Moltin.Products),
+  Moltin.Products
+);
+Moltin.Variations.endpoint = 'variations';
+Moltin.Variations.Options = function(variationId) {
+  const options = Object.setPrototypeOf(Object.assign({}, this), this);
+  options.endpoint = `variations/${variationId}/variation-options`;
+
+  return options;
 };
 
 module.exports = Moltin;
