@@ -1,71 +1,32 @@
 'use strict';
 
-const fs = require('fs');
-const csv = require('csv');
-const gm = require('gm');
-const Rx = require('rx');
-Rx.Node = require('rx-node');
+const _ = require('lodash');
+const Moltin = require('./moltin');
 
-const convert = (path, row) =>
-  new Promise((resolve, reject) => {
-    row.thumbnail = row.thumbnail.slice(0, -1);
-    row.thumbnail_filename = row.thumbnail_filename.slice(0, -1);
-    row.large = row.large.slice(0, -1);
-    row.large_filename = row.large_filename.slice(0, -1);
+module.exports = async function(path, products) {
+  const imagesM = await Moltin.Files.ReadAll();
 
-    console.log(
-      'Processing %s and %s',
-      row.thumbnail_filename,
-      row.large_filename
-    );
+  const images = _.chain(products)
+    .flatMap(product => product.variants)
+    .map(variant => variant.image.large_filename)
+    .map(file => file.replace(/\.gif$/, '.png'))
+    .uniq()
+    .filter(file => !imagesM.some(i => i.file_name.includes(file)))
+    .value();
 
-    const image_thumb = new Buffer(row.thumbnail, 'hex');
-    const thumbnail_filename = row.thumbnail_filename.replace(/\.gif$/, '');
-    gm(image_thumb, `${thumbnail_filename}.gif`).write(
-      `${path}/images/${thumbnail_filename}.png`,
-      err => {
-        if (err) {
-          console.error(err);
-        }
-      }
-    );
-
-    const image_large = new Buffer(row.large, 'hex');
-    const large_filename = row.large_filename.replace(/\.gif$/, '');
-    gm(image_large, `${large_filename}.gif`).write(
-      `${path}/images/${large_filename}.png`,
-      err => {
-        if (err) {
-          console.error(err);
-        }
-      }
-    );
-
-    resolve();
-  });
-
-module.exports = function(path) {
-  if (!fs.existsSync(`${path}/images`)) {
-    fs.mkdirSync(`${path}/images`);
+  if (images.length === 0) {
+    return imagesM;
   }
 
-  return Rx.Node.fromStream(
-    fs
-      .createReadStream(`${path}/ProductPhoto.csv`, { encoding: 'utf16le' })
-      .pipe(
-        csv.parse({
-          delimiter: '|',
-          rowDelimiter: '\r\n',
-          columns: [
-            'id',
-            'thumbnail',
-            'thumbnail_filename',
-            'large',
-            'large_filename',
-            'date',
-            'ignore'
-          ]
-        })
-      )
-  ).flatMap(row => Rx.Observable.defer(() => convert(path, row)));
+  for (let image of images) {
+    console.log('Uploading %s', image);
+
+    try {
+      const imageM = await Moltin.Files.Create(`${path}/images/${image}`);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  return await Moltin.Files.ReadAll();
 };

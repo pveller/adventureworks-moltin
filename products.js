@@ -3,6 +3,7 @@
 const _ = require('lodash');
 const advw = require('./adventure-works-data');
 const variations = require('./variations');
+const images = require('./images');
 const Moltin = require('./moltin');
 
 module.exports = async function(path) {
@@ -16,6 +17,9 @@ module.exports = async function(path) {
 
   // First, let's see if we need to create variations and options
   const variationsM = await variations(products);
+
+  // Load all images (if needed)
+  const imagesM = await images(path, products);
 
   for (let product of products) {
     // Select the first variant to get some variant-level properties that Moltin needs at the product level

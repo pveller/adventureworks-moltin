@@ -3,7 +3,7 @@
 const fs = require('fs');
 const categories = require('./categories');
 const products = require('./products');
-const images = require('./images');
+const convertImages = require('./convert-images');
 const preprocess = require('./preprocess');
 const Moltin = require('./moltin');
 
@@ -45,10 +45,10 @@ const monitor = (section, resolve) => () => {
 
 (async function() {
   // Step 1. Pre-process Adventure Works images (save GIFs to PNG)c
-  await (skip('images')
+  await (skip('convert-images')
     ? Promise.resolve()
     : new Promise(resolve =>
-        images(catalog).subscribeOnCompleted(monitor('images', resolve))
+        convertImages(catalog).subscribeOnCompleted(monitor('images', resolve))
       ));
 
   // Step 2. Preprocess ProductModel.csv so that csv parser could understand it
@@ -75,6 +75,8 @@ const monitor = (section, resolve) => () => {
   await (clean('categories')
     ? Moltin.Categories.RemoveAll()
     : Promise.resolve());
+
+  await (clean('files') ? Moltin.Files.RemoveAll() : Promise.resolve());
 
   // Step 5. Import categories
   await (skip('categories')
