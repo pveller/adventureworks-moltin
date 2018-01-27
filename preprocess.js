@@ -6,7 +6,7 @@ module.exports = function(file, opts, patches) {
   return new Promise((resolve, reject) => {
     fs.readFile(`${file}`, opts, (err, content) => {
       if (err) {
-        throw err;
+        return reject(err);
       }
 
       const modified = patches.reduce((text, patch) => {
@@ -15,9 +15,10 @@ module.exports = function(file, opts, patches) {
 
       fs.writeFile(`${file}`.replace(/csv$/, '2.csv'), modified, opts, err => {
         if (err) {
-          throw err;
+          reject(err);
+        } else {
+          resolve();
         }
-        resolve();
       });
     });
   });

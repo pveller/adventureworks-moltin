@@ -2,18 +2,8 @@
 
 const _ = require('lodash');
 const advw = require('./adventure-works-data');
+const variations = require('./variations');
 const Moltin = require('./moltin');
-
-// ToDo: 1. convert to a module that exposes one function accepting path and tax band as an argument (or maybe we just query the tax band?)
-
-const findMatchingVariant = function(variation, variants) {
-  return variants.find(variant => {
-    return Object.keys(variation.modifiers).every(key => {
-      let mod = variation.modifiers[key];
-      return variant[mod.data.title] === mod.var_title;
-    });
-  });
-};
 
 module.exports = async function(path) {
   const [catalog, tree] = await Promise.all([
@@ -22,84 +12,43 @@ module.exports = async function(path) {
   ]);
 
   const categories = tree.data;
-  const products = catalog.inventory.filter(
-    product => product.variants.length > 0
-  );
+  const products = catalog.inventory.filter(product => product.variants.length);
 
   // First, let's see if we need to create variations and options
-  // There is only color and size so we should not worry about limit and offset
-
-  let variations = await Moltin.Variations.All();
-  const modifiers = _.chain(products)
-    .flatMap(product => product.modifiers.map(mod => mod.title))
-    .uniq()
-    .filter(mod => !variations.data.find(v => v.name === mod))
-    .value();
-
-  for (let modifier of modifiers) {
-    console.log('Creating a product variation %s', modifier);
-
-    const variation = await Moltin.Variations.Create({
-      type: 'product-variation',
-      name: modifier
-    });
-
-    // now need to create options for this variation
-    const options = _.chain(products)
-      .flatMap(product => product.modifiers)
-      .filter(mod => mod.title === modifier)
-      .flatMap(mod => mod.values)
-      .uniq()
-      .value();
-
-    for (let option of options) {
-      console.log('Create a variation option %s for %s', option, modifier);
-
-      await Moltin.Variations.Options(variation.data.id).Create({
-        type: 'product-variation-option',
-        name: option,
-        description: option
-      });
-    }
-  }
-
-  // re-read variations
-  variations = await Moltin.Variations.All();
+  const variationsM = await variations(products);
 
   for (let product of products) {
-    // Select the first variant to get some variant-level properties that Moltin requires at the product level
-    const variant = product.variants[0];
+    // Select the first variant to get some variant-level properties that Moltin needs at the product level
+    for (let attr of ['category', 'sku', 'price']) {
+      product[attr] = product.variants[0][attr];
+    }
 
     // Adventure Works products have variants that all belong to the same category
     const category = categories
       .concat(_.flatMap(categories, c => c.children || []))
-      .find(c => c.name === variant.category.name);
+      .find(c => c.name === product.category.name);
 
     if (!category) {
-      console.error(
-        "Can't find a category in motlin for %s",
-        variant.category.name
-      );
-      // Keep going and let it create other products
+      console.error("Can't find a category for %s", product.category.name);
       continue;
     }
 
     try {
       console.log('Creating product [%s]', product.name);
 
-      let result = await Moltin.Products.Create({
+      let productM = await Moltin.Products.Create({
         type: 'product',
         name: product.name,
         slug: product.name.toLowerCase().replace(' ', '-'),
         status: 'live',
         price: [
           {
-            amount: Number(variant.price),
+            amount: Number(product.price),
             currency: 'USD',
             includes_tax: true
           }
         ],
-        sku: `P*${variant.sku.substring(0, 7)}`,
+        sku: `${product.sku.substring(0, 7)}`,
         manage_stock: false,
         commodity_type: 'physical',
         description: product.description
@@ -112,85 +61,79 @@ module.exports = async function(path) {
       );
 
       await Moltin.Products.CreateRelationships(
-        result.data.id,
+        productM.data.id,
         'category',
         category.id
       );
 
-      // find variations that this product has
-      const variants = variations.data.filter(item =>
-        product.modifiers.map(mod => mod.title).includes(item.name)
-      );
+      console.log('Assiging applicable variations to %s', product.name);
 
       await Moltin.Products.CreateRelationshipsRaw(
-        result.data.id,
+        productM.data.id,
         'variations',
-        variants.map(variant => ({
-          id: variant.id,
-          type: variant.type
-        }))
+        variationsM.data
+          .filter(variation =>
+            product.modifiers.some(mod => mod.title === variation.name)
+          )
+          .map(variation => ({
+            id: variation.id,
+            type: variation.type
+          }))
       );
 
-      // re-read the product
-      result = await Moltin.Products.Get(result.data.id);
+      // build product variants
+      /*
+      I am not building the variants using the magic build process.
+      https://moltin.com/blog/2017/06/introducing-variations-options-modifiers/
+
+      Adventure Works has 18 sizes and 9 colors and that 162 combinations.
+      Running a build will create that many products for each parent product.
+      Instead, I am creating the variants by hand. 
+
+      The v1 used to have the is_variation attribute that would signal me
+      that a product is a variant of another product. v2 doesn't have it 
+      so I will tell the difference by inspecting the relations. 
+      Variants will not have variation relation and that will be a tell sign.
+      
+      (I am using this when generating search indexes for the bot)
+      */
+      // const build = await Moltin.Products.Build(result.data.id);
+
+      // now let's create the variants
+      for (let variant of product.variants) {
+        console.log(
+          'Creating a product variant %s - %s',
+          variant.name,
+          variant.sku
+        );
+
+        const variantM = await Moltin.Products.Create({
+          type: 'product',
+          name: variant.name,
+          slug: variant.name.toLowerCase().replace(' ', '-'),
+          status: 'live',
+          price: [
+            {
+              amount: Number(variant.price),
+              currency: 'USD',
+              includes_tax: true
+            }
+          ],
+          sku: variant.sku,
+          manage_stock: false,
+          commodity_type: 'physical',
+          // this is the only way to rememebr what size and color this variant represents
+          // without using flows and without actually building the matrix (see the rationale above)
+          description: JSON.stringify({
+            size: variant.size,
+            color: variant.color
+          })
+        });
+      }
+
+      // now need to import images and create relations for product and its variants
 
       /*
-  
-        .then(mods => {
-          return mods.reduce((chain, mod) => {
-            return mod.values.reduce((chain, value) => {
-              return chain.then(() => {
-                console.log(
-                  'Adding a variation [%s - %s] for %s',
-                  mod.title,
-                  value,
-                  mod.productName
-                );
-  
-                return Moltin.Variation.Create(mod.productId, mod.id, {
-                  title: value
-                });
-              });
-            }, chain);
-          }, Promise.resolve());
-        })
-        .then(() => {
-          // Read the variants matrix that Moltin has created behind the scenes
-          return Moltin.Products.Variations(product.moltinId);
-        })
-        .then(variations => {
-          // Prune variations and also update sku numbers on those that match up
-          // We need the right SKU numbers for the recommendation engine to recognize it
-          return Promise.all(
-            variations.map(variation => {
-              let variant = findMatchingVariant(
-                variation,
-                product.variants
-              );
-  
-              if (variant) {
-                console.log(
-                  'Changing SKU on the variation %s from %s to %s',
-                  variation.title,
-                  variation.sku,
-                  variant.sku
-                );
-                return Moltin.Products.Update(variation.id, {
-                  sku: variant.sku
-                });
-              } else {
-                console.log(
-                  'Deleting a variation [%s] that does not exist in the data',
-                  variation.title
-                );
-                return Moltin.Products.Delete(
-                  variation.id,
-                  result => null
-                );
-              }
-            })
-          );
-        })
         .then(variations => {
           const images = variations.filter(v => !!v).map(variation => {
             let variant = findMatchingVariant(

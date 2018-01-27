@@ -85,7 +85,7 @@ module.exports = function(path) {
                   id: child
                 }))
               )
-                .then(result => {
+                .then(() => {
                   console.log(
                     'Created %s children relationships for %s',
                     subcategories[parent].length,

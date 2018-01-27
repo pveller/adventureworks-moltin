@@ -47,7 +47,7 @@ const readCsvToArray = function(file, columns, opts) {
       })
       .on('error', function(error) {
         console.log('Error parsing %s', file);
-        throw error;
+        reject(error);
       });
   });
 };
