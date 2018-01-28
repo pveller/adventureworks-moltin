@@ -1,92 +1,47 @@
 'use strict';
 
-const fs = require('fs');
-const categories = require('./categories');
-const products = require('./products');
-const convertImages = require('./convert-images');
-const preprocess = require('./preprocess');
-const Moltin = require('./moltin');
-
 process.on('unhandledRejection', reason => console.error(reason));
 
-const argv = require('minimist')(process.argv.slice(2));
-
-const catalog = argv._[0];
-if (!catalog || !fs.existsSync(catalog)) {
-  throw 'Please specify a valid file system path to the Adventure Works catalog files as a command line argument';
-}
-
-const isRequested = (arg, value) => {
-  if (!value) {
-    return argv[arg];
-  }
-
-  if (typeof argv[arg] === 'string') {
-    return argv[arg] === value;
-  }
-
-  if (Array.isArray(argv[arg])) {
-    return argv[arg].includes(value);
-  }
-
-  return false;
-};
-const clean = entity => isRequested('clean', entity);
-const skip = entity => isRequested('skip', entity);
-
-// ToDo: refactor away from RxJS
-
-const monitor = (section, resolve) => () => {
-  console.log(`Processing of ${section} is complete`);
-  resolve.call();
-};
+const advw = require('./adventure-works-data');
+const categories = require('./categories');
+const products = require('./products');
+const argv = require('./argv');
+const Moltin = require('./moltin');
 
 // ToDo: check if we need to create a currency
 
 (async function() {
-  // Step 1. Pre-process Adventure Works images (save GIFs to PNG)c
-  await (skip('convert-images')
-    ? Promise.resolve()
-    : new Promise(resolve =>
-        convertImages(catalog).subscribeOnCompleted(monitor('images', resolve))
-      ));
+  const catalog = await advw(argv.path);
 
-  // Step 2. Preprocess ProductModel.csv so that csv parser could understand it
-  await preprocess(`${catalog}/ProductModel.csv`, { encoding: 'utf16le' }, [
-    /<root.+?>[\s\S]+?<\/root>/gm,
-    /<p1:ProductDescription.+?>[\s\S]+?<\/p1:ProductDescription>/gm,
-    /<\?.+?\?>/g
-  ]);
+  if (argv.clean('products')) {
+    console.log('Catalog cleanup: removing products');
+    await Moltin.Products.RemoveAll();
+  }
 
-  // Step 3. Preprocess ProductDescription.csv so that csv parser could understand it
-  await preprocess(
-    `${catalog}/ProductDescription.csv`,
-    { encoding: 'utf16le' },
-    [/"/g]
-  );
+  if (argv.clean('variations')) {
+    console.log('Catalog cleanup: removing variations');
+    await Moltin.Variations.RemoveAll();
+  }
 
-  // Step 4. Erase the catalog if running with the --clean options
-  await (clean('products') ? Moltin.Products.RemoveAll() : Promise.resolve());
+  if (argv.clean('categories')) {
+    console.log('Catalog cleanup: removing categories');
+    await Moltin.Categories.RemoveAll();
+  }
 
-  await (clean('variations')
-    ? Moltin.Variations.RemoveAll()
-    : Promise.resolve());
+  if (argv.clean('files')) {
+    console.log('Catalog cleanup: removing files and images');
+    await Moltin.Files.RemoveAll();
+  }
 
-  await (clean('categories')
-    ? Moltin.Categories.RemoveAll()
-    : Promise.resolve());
+  if (!argv.skip('categories')) {
+    console.log('Importing categories');
+    await categories(argv.path, catalog);
+  }
 
-  await (clean('files') ? Moltin.Files.RemoveAll() : Promise.resolve());
-
-  // Step 5. Import categories
-  await (skip('categories')
-    ? Promise.resolve()
-    : new Promise(resolve =>
-        categories(catalog).subscribeOnCompleted(monitor('categories', resolve))
-      ));
-
-  // Step 6. Import products
-  await (skip('products') ? Promise.resolve() : products(catalog));
+  if (!argv.skip('products')) {
+    console.log('Importing products');
+    await products(argv.path, catalog);
+  }
 
   console.log('New moltin catalog is ready to go');
 })();

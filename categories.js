@@ -3,101 +3,50 @@
 const Moltin = require('./moltin');
 const fs = require('fs');
 const csv = require('csv');
-const Rx = require('rx');
-Rx.Node = require('rx-node');
 
-module.exports = function(path) {
-  return Rx.Node.fromStream(
-    fs.createReadStream(`${path}/ProductCategory.csv`).pipe(
-      csv.parse({
-        delimiter: '\t',
-        rowDelimiter: '\r\n',
-        columns: ['id', 'name', 'guid', 'date']
-      })
-    )
-  )
-    .concatMap(row =>
-      Rx.Observable.defer(() =>
-        Moltin.Categories.Create({
-          type: 'category',
-          name: row.name,
-          slug: row.name.toLowerCase(),
-          status: 'live',
-          description: row.name
-        }).then(({ data }) => {
-          console.log(`Successfully created ${data.name} category`);
+module.exports = async function(path, catalog) {
+  for (let category of catalog.categories) {
+    console.log('Creating category %s', category.name);
 
-          row.moltin = data;
-          return row;
-        })
-      )
-    )
-    .flatMap(category =>
-      Rx.Node.fromStream(
-        fs.createReadStream(`${path}/ProductSubcategory.csv`).pipe(
-          csv.parse({
-            delimiter: '\t',
-            rowDelimiter: '\r\n',
-            columns: ['id', 'parent', 'name', 'guid', 'date']
-          })
-        )
-      )
-        .filter(row => row.parent === category.id)
-        .map(subcategory => {
-          subcategory.parent = category;
-          return subcategory;
-        })
-    )
-    .concatMap(subcategory =>
-      Rx.Observable.defer(() =>
-        Moltin.Categories.Create({
-          type: 'category',
-          name: subcategory.name,
-          slug: subcategory.name.toLowerCase(),
-          status: 'live',
-          description: subcategory.name
-        }).then(({ data }) => {
-          console.log(`Successfully created ${data.name} category`);
+    const categoryM = await Moltin.Categories.Create({
+      type: 'category',
+      name: category.name,
+      description: category.name,
+      slug: category.name.toLowerCase(),
+      status: 'live'
+    });
 
-          subcategory.moltin = data;
-          return subcategory;
-        })
-      )
-    )
-    .reduce((acc, subcategory) => {
-      const parent = subcategory.parent.moltin.id;
+    if (category.children.length === 0) {
+      continue;
+    }
 
-      acc[parent] = acc[parent] || [];
-      acc[parent].push(subcategory.moltin.id);
+    const subCategoriesM = [];
+    for (subCategory of category.children) {
+      console.log(
+        'Creating a category %s -> %s',
+        category.name,
+        subCategory.name
+      );
 
-      return acc;
-    }, {})
-    .concatMap(subcategories =>
-      Rx.Observable.defer(() =>
-        Object.keys(subcategories).reduce(
-          (chain, parent) =>
-            chain.then(() =>
-              Moltin.Categories.CreateRelationships(
-                parent,
-                'children',
-                subcategories[parent].map(child => ({
-                  type: 'category',
-                  id: child
-                }))
-              )
-                .then(() => {
-                  console.log(
-                    'Created %s children relationships for %s',
-                    subcategories[parent].length,
-                    parent
-                  );
-                })
-                .catch(error => {
-                  console.error(error);
-                })
-            ),
-          Promise.resolve()
-        )
-      )
+      const subCategoryM = await Moltin.Categories.Create({
+        type: 'category',
+        name: subCategory.name,
+        description: subCategory.name,
+        slug: subCategory.name.toLowerCase(),
+        status: 'live'
+      });
+
+      subCategoriesM.push(subCategoryM);
+    }
+
+    console.log('Creating parent -> child relationships for %s', category.name);
+    await Moltin.Categories.CreateRelationships(
+      categoryM.data.id,
+      'children',
+      subCategoriesM.map(child => ({
+        type: 'category',
+        id: child.data.id
+      }))
     );
+  }
 };

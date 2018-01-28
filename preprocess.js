@@ -9,11 +9,12 @@ module.exports = function(file, opts, patches) {
         return reject(err);
       }
 
-      const modified = patches.reduce((text, patch) => {
-        return text.replace(patch, '');
-      }, content);
+      const patched = patches.reduce(
+        (text, patch) => text.replace(patch, ''),
+        content
+      );
 
-      fs.writeFile(`${file}`.replace(/csv$/, '2.csv'), modified, opts, err => {
+      fs.writeFile(`${file}`.replace(/csv$/, '2.csv'), patched, opts, err => {
         if (err) {
           reject(err);
         } else {

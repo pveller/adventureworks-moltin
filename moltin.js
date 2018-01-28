@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const request = require('request-promise-native');
+
 const MoltinGateway = require('@moltin/sdk').gateway;
 const Moltin = MoltinGateway({
   client_id: process.env.MOLTIN_CLIENT_ID,
@@ -42,37 +43,6 @@ const relate = function(id, type, resources) {
 
 Moltin.Categories.CreateRelationships = relate;
 Moltin.Products.CreateRelationshipsRaw = relate;
-
-/*
-  Read everything at once
-*/
-const readAll = function() {
-  const all = [];
-
-  const read = async (offset = 0) => {
-    this.Offset(offset);
-    const { data, meta } = await this.All();
-
-    // ToDo: test total/current/offset logic on products
-
-    const total = meta.page.total;
-    const current = meta.page.current;
-
-    console.log('Read %s of %s total', data.length, meta.results.total);
-
-    all.push(...data);
-
-    // ToDo: use meta.page instead
-    return total > current ? await read(current) : all;
-  };
-
-  try {
-    return read();
-  } finally {
-    // reset offset back to 0. Moltin.<Entity> are singletons
-    this.Offset(0);
-  }
-};
 
 /*
 Recursively delete all records to clean up the catalog
@@ -118,12 +88,6 @@ Moltin.Files = Object.setPrototypeOf(
   Moltin.Products
 );
 Moltin.Files.endpoint = 'files';
-
-/*
-  It will be easier to import all images at once and then assign them back to products. 
-  Reading all at once helps in the absence of search by name
-*/
-Moltin.Files.ReadAll = readAll;
 
 /*
  Need to overwrite Create() to stream binary files
@@ -173,6 +137,9 @@ Moltin.Variations.Options = function(variationId) {
   return options;
 };
 
+/*
+Expose the /build endpoint
+*/
 Moltin.Products.Build = function(id) {
   return this.request.send(`${this.endpoint}/${id}/build`, 'POST');
 };

@@ -4,18 +4,19 @@ const _ = require('lodash');
 const Moltin = require('./moltin');
 
 module.exports = async function(path, products) {
-  const imagesM = await Moltin.Files.ReadAll();
+  // there are only 42 unique images in AW
+  // so no need to worry about offset and limits (the default is 100)
+  let imagesM = await Moltin.Files.All();
 
   const images = _.chain(products)
     .flatMap(product => product.variants)
     .map(variant => variant.image.large_filename)
-    .map(file => file.replace(/\.gif$/, '.png'))
     .uniq()
-    .filter(file => !imagesM.some(i => i.file_name.includes(file)))
+    .filter(file => !imagesM.data.some(i => i.file_name === file))
     .value();
 
   if (images.length === 0) {
-    return imagesM;
+    return imagesM.data;
   }
 
   for (let image of images) {
@@ -28,5 +29,8 @@ module.exports = async function(path, products) {
     }
   }
 
-  return await Moltin.Files.ReadAll();
+  // re-read images
+  imagesM = await Moltin.Files.All();
+
+  return imagesM.data;
 };

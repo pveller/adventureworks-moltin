@@ -1,35 +1,42 @@
 'use strict';
 
 const _ = require('lodash');
-const advw = require('./adventure-works-data');
 const variations = require('./variations');
 const images = require('./images');
 const Moltin = require('./moltin');
 
-module.exports = async function(path) {
-  const [catalog, tree] = await Promise.all([
-    advw({ path }),
-    Moltin.Categories.Tree()
-  ]);
+module.exports = async function(path, catalog) {
+  const categoriesM = (await Moltin.Categories.Tree()).data;
 
-  const categories = tree.data;
+  // Only create products that have variants
   const products = catalog.inventory.filter(product => product.variants.length);
 
-  // First, let's see if we need to create variations and options
+  // Create variations and options (if needed)
   const variationsM = await variations(products);
 
   // Load all images (if needed)
   const imagesM = await images(path, products);
 
+  const assignImage = async (productId, image) => {
+    const imageM = imagesM.find(imageM => imageM.file_name === image);
+
+    console.log('Assigning image %s to %s', imageM.file_name, product.name);
+
+    await Moltin.Products.CreateRelationshipsRaw(productId, 'main-image', {
+      id: imageM.id,
+      type: 'main_image'
+    });
+  };
+
   for (let product of products) {
     // Select the first variant to get some variant-level properties that Moltin needs at the product level
-    for (let attr of ['category', 'sku', 'price']) {
+    for (let attr of ['category', 'sku', 'price', 'image']) {
       product[attr] = product.variants[0][attr];
     }
 
     // Adventure Works products have variants that all belong to the same category
-    const category = categories
-      .concat(_.flatMap(categories, c => c.children || []))
+    const category = categoriesM
+      .concat(_.flatMap(categoriesM, c => c.children || []))
       .find(c => c.name === product.category.name);
 
     if (!category) {
@@ -85,6 +92,8 @@ module.exports = async function(path) {
           }))
       );
 
+      await assignImage(productM.data.id, product.image.large_filename);
+
       // build product variants
       /*
       I am not building the variants using the magic build process.
@@ -101,9 +110,10 @@ module.exports = async function(path) {
       
       (I am using this when generating search indexes for the bot)
       */
+
       // const build = await Moltin.Products.Build(result.data.id);
 
-      // now let's create the variants
+      // create the variants manually (vs. using the /build endpoint)
       for (let variant of product.variants) {
         console.log(
           'Creating a product variant %s - %s',
@@ -127,47 +137,16 @@ module.exports = async function(path) {
           manage_stock: false,
           commodity_type: 'physical',
           // this is the only way to rememebr what size and color this variant represents
-          // without using flows and without actually building the matrix (see the rationale above)
+          // without using flows and without actually building the matrix (see the rationale above).
+          // And variants don't have descriptions in AW anyway
           description: JSON.stringify({
             size: variant.size,
             color: variant.color
           })
         });
+
+        await assignImage(variantM.data.id, variant.image.large_filename);
       }
-
-      // now need to import images and create relations for product and its variants
-
-      /*
-        .then(variations => {
-          const images = variations.filter(v => !!v).map(variation => {
-            let variant = findMatchingVariant(
-              variation,
-              product.variants
-            );
-  
-            return {
-              file: `${path}/images/${variant.image.large_filename.replace(
-                /\.gif$/,
-                '.png'
-              )}`,
-              assignTo: variation.id
-            };
-          });
-  
-          return Promise.all(
-            images.map(image => Moltin.Image.Create(image)).concat(
-              Moltin.Image.Create({
-                // There's no product level image in Adventure Works so any first variant will do
-                file: `${path}/images/${product.variants[0].image.large_filename.replace(
-                  /\.gif$/,
-                  '.png'
-                )}`,
-                assignTo: product.moltinId
-              })
-            )
-          ).catch(error => console.error(error));
-        });
-        */
     } catch (error) {
       console.error(error);
     }

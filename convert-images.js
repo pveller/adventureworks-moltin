@@ -67,5 +67,7 @@ module.exports = function(path) {
           ]
         })
       )
-  ).flatMap(row => Rx.Observable.defer(() => convert(path, row)));
+  )
+    .flatMap(row => Rx.Observable.defer(() => convert(path, row)))
+    .toPromise();
 };
