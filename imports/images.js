@@ -6,7 +6,7 @@ const Moltin = require('../moltin');
 module.exports = async function(path, products) {
   // there are only 42 unique images in AW
   // so no need to worry about offset and limits (the default is 100)
-  let imagesM = await Moltin.Files.All();
+  const imagesM = await Moltin.Files.All();
 
   const images = _.chain(products)
     .flatMap(product => product.variants)
@@ -34,7 +34,5 @@ module.exports = async function(path, products) {
   }
 
   // re-read images
-  imagesM = await Moltin.Files.All();
-
-  return imagesM.data;
+  return (await Moltin.Files.All()).data;
 };

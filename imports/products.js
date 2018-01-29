@@ -19,6 +19,10 @@ module.exports = async function(path, catalog) {
 
   const assignImage = async (id, image) => {
     const imageM = imagesM.find(imageM => imageM.file_name === image);
+    if (!imageM) {
+      console.warn('Cannot find %s', image);
+      return;
+    }
 
     console.log('Assigning image %s to %s', imageM.file_name, id);
 
