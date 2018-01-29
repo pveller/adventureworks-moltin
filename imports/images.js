@@ -1,7 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
-const Moltin = require('./moltin');
+const Moltin = require('../moltin');
 
 module.exports = async function(path, products) {
   // there are only 42 unique images in AW
@@ -25,7 +25,11 @@ module.exports = async function(path, products) {
     try {
       const imageM = await Moltin.Files.Create(`${path}/images/${image}`);
     } catch (error) {
-      console.error(error);
+      if (Array.isArray(error)) {
+        error.forEach(console.error);
+      } else {
+        console.error(error);
+      }
     }
   }
 

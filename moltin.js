@@ -57,11 +57,20 @@ const removeAll = function() {
     console.log('Processing the first %s of %s total', current, total);
 
     for (let item of data) {
-      console.log('Requesting a delete of %s - %s', item.name, item.id);
+      console.log(
+        'Requesting a delete of %s - %s',
+        item.name || item.code,
+        item.id
+      );
+
       try {
         await this.Delete(item.id);
       } catch (error) {
-        console.error(error);
+        if (Array.isArray(error)) {
+          error.forEach(console.error);
+        } else {
+          console.error(error);
+        }
       }
     }
 
@@ -73,6 +82,7 @@ const removeAll = function() {
 
 Moltin.Categories.RemoveAll = removeAll;
 Moltin.Products.RemoveAll = removeAll;
+Moltin.Currencies.RemoveAll = removeAll;
 
 /*
 Adding missing API wrappers. Reusing the existing protypes and instance variables.

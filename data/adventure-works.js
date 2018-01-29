@@ -3,7 +3,7 @@ const csv = require('csv');
 const _ = require('lodash');
 const convertImages = require('./convert-images');
 const preprocess = require('./preprocess');
-const argv = require('./argv');
+const argv = require('../argv');
 
 const utf16Multiline = {
   encoding: 'utf16le',

@@ -1,7 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
-const Moltin = require('./moltin');
+const Moltin = require('../moltin');
 
 module.exports = async function(products) {
   const variationsM = await Moltin.Variations.All();

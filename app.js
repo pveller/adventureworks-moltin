@@ -2,45 +2,30 @@
 
 process.on('unhandledRejection', reason => console.error(reason));
 
-const advw = require('./adventure-works-data');
-const categories = require('./categories');
-const products = require('./products');
+const advw = require('./data/adventure-works');
+const imports = {
+  currencies: require('./imports/currencies'),
+  categories: require('./imports/categories'),
+  products: require('./imports/products')
+};
 const argv = require('./argv');
 const Moltin = require('./moltin');
-
-// ToDo: check if we need to create a currency
 
 (async function() {
   const catalog = await advw(argv.path);
 
-  if (argv.clean('products')) {
-    console.log('Catalog cleanup: removing products');
-    await Moltin.Products.RemoveAll();
+  for (let entity of ['Products', 'Variations', 'Categories', 'Files']) {
+    if (argv.clean(entity.toLowerCase())) {
+      console.log('Catalog cleanup: removing %s', entity);
+      await Moltin[entity].RemoveAll();
+    }
   }
 
-  if (argv.clean('variations')) {
-    console.log('Catalog cleanup: removing variations');
-    await Moltin.Variations.RemoveAll();
-  }
-
-  if (argv.clean('categories')) {
-    console.log('Catalog cleanup: removing categories');
-    await Moltin.Categories.RemoveAll();
-  }
-
-  if (argv.clean('files')) {
-    console.log('Catalog cleanup: removing files and images');
-    await Moltin.Files.RemoveAll();
-  }
-
-  if (!argv.skip('categories')) {
-    console.log('Importing categories');
-    await categories(argv.path, catalog);
-  }
-
-  if (!argv.skip('products')) {
-    console.log('Importing products');
-    await products(argv.path, catalog);
+  for (let entity of Object.keys(imports)) {
+    if (!argv.skip(entity)) {
+      console.log('Importing %s', entity);
+      await imports[entity](argv.path, catalog);
+    }
   }
 
   console.log('New moltin catalog is ready to go');

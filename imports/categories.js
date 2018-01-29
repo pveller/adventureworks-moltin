@@ -1,6 +1,6 @@
 'use strict';
 
-const Moltin = require('./moltin');
+const Moltin = require('../moltin');
 const fs = require('fs');
 const csv = require('csv');
 
@@ -21,7 +21,7 @@ module.exports = async function(path, catalog) {
     }
 
     const subCategoriesM = [];
-    for (subCategory of category.children) {
+    for (let subCategory of category.children) {
       console.log(
         'Creating a category %s -> %s',
         category.name,
