@@ -100,19 +100,14 @@ module.exports = async function(path, catalog) {
 
       // build product variants
       /*
-      I am not building the variants using the magic build process.
+      I am not building the variants using the "magic" build process.
       https://moltin.com/blog/2017/06/introducing-variations-options-modifiers/
 
-      Adventure Works has 18 sizes and 9 colors and that 162 combinations.
-      Running a build will create that many products for each parent product.
-      Instead, I am creating the variants by hand. 
+      Adventure Works has 18 sizes and 9 colors and means 162 combinations.
+      Running a build will create that many products (variants) for each parent product.
+      I would then need to prune the list to only retain relevant variants.
 
-      The v1 used to have the is_variation attribute that would signal me
-      that a product is a variant of another product. v2 doesn't have it 
-      so I will tell the difference by inspecting the relations. 
-      Variants will not have variation relation and that will be a tell sign.
-      
-      (I am using this when generating search indexes for the bot)
+      Instead, I am creating the variants by hand.
       */
 
       // const build = await Moltin.Products.Build(result.data.id);
@@ -140,10 +135,13 @@ module.exports = async function(path, catalog) {
           sku: variant.sku,
           manage_stock: false,
           commodity_type: 'physical',
-          // this is the only way to rememebr what size and color this variant represents
+          // This is the only way to rememebr what size and color this variant represents
           // without using flows and without actually building the matrix (see the rationale above).
-          // And variants don't have descriptions in AW anyway
+          // Plus, we need to remember the variant's parent product.
+          // I wouldn't need to do it if I used /build but I have already explained why I decided against it.
+          // And variants don't have descriptions in AW anyway.
           description: JSON.stringify({
+            parent: productM.data.id,
             size: variant.size,
             color: variant.color
           })
