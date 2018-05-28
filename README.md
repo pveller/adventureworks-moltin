@@ -1,21 +1,22 @@
 # UPDATE
+
 Upgraded to work over Moltin v2 and is now using the latest [js-sdk](https://github.com/moltin/js-sdk)
 
 # Adventure Works catalog for Moltin
 
-A set of scripts to setup the [Adventure Works](https://msftdbprodsamples.codeplex.com/releases/view/125550) product catalog in your [Moltin](https://moltin.com/) store.
+A set of scripts to setup the [Adventure Works](https://github.com/Microsoft/sql-server-samples/releases/tag/adventureworks) product catalog in your [Moltin](https://moltin.com/) store.
 
 ## Motivation
 
 I was building a conversational eCommerce chatbot for [my talk at API Strat](http://boston2016.apistrat.com/speakers/pavel-veller) and I needed a robust but easy to use API-first commerce platform with a decent free plan. This is how I discovered [Moltin](https://moltin.com/).
 
-The next thing I needed was a sample store that would have categories and products with images and variants (like `color` and `size`). I also needed historical orders to build a recommendation model with [Cognitive Services Recommendations API](https://www.microsoft.com/cognitive-services/en-us/recommendations-api). This is how I discovered [Adventure Works](https://msftdbprodsamples.codeplex.com/releases/view/125550).
+The next thing I needed was a sample store that would have categories and products with images and variants (like `color` and `size`). I also needed historical orders to build a recommendation model with [Cognitive Services Recommendations API](https://www.microsoft.com/cognitive-services/en-us/recommendations-api). This is how I discovered [Adventure Works](https://github.com/Microsoft/sql-server-samples/releases/tag/adventureworks).
 
 ## Usage
 
 To create your Adventure Works catalog in Moltin you'll need [node.js](https://nodejs.org/en/) (go for the latest 8.x as I am using ES6/7 straight up with no build step). Then:
 
-* Sign up for Moltin and create a new store. Go to the store settings to get your API keys. 
+* Sign up for Moltin and create a new store. Go to the store settings to get your API keys.
 
 * Set up two environment variables
 
@@ -24,7 +25,7 @@ export MOLTIN_CLIENT_ID="<Client ID>"
 export MOLTIN_CLIENT_SECRET="<Client Secret>"
 ```
 
-* Download Adventure Works OLTP Script from [here](https://msftdbprodsamples.codeplex.com/downloads/get/880662) and unzip (for example to `~/Downloads/Adventure Works 2014 OLTP Script`)
+* Download Adventure Works OLTP Script from [here](https://github.com/Microsoft/sql-server-samples/releases/download/adventureworks/AdventureWorks-oltp-install-script.zip) and unzip (for example to `~/Downloads/Adventure Works 2014 OLTP Script`)
 
 * Clone this repository
 
@@ -65,7 +66,7 @@ node app.js "path" --clean=<entity> --clean=<another entity> --skip=<step> --ski
 
 You can clean: `products`, `categories`, `variants`, and `files` (images). To request that multiple entities be cleaned please use `--clean=<entity>` for each entity.
 
-You can skip: `convert-images`, `preprocess-csv`, `categories`, and `products`. The first two you really only need to run once over the freshly downloaded Adventure Works catalog data. The `products` step uploads missing images, creates missing variations, and creates products and variants. 
+You can skip: `convert-images`, `preprocess-csv`, `categories`, and `products`. The first two you really only need to run once over the freshly downloaded Adventure Works catalog data. The `products` step uploads missing images, creates missing variations, and creates products and variants.
 
 Moltin API is rate-limited so the script does everything sequentially. It will run for about ten to twenty minutes and you should see something like this in your console:
 
